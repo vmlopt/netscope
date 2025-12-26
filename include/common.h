@@ -44,6 +44,13 @@ typedef struct {
     char status[8];
     long latency_ms;
     char banner[256];
+    // Service detection data
+    int tcp_window_size;
+    long response_time_ms;
+    char response_pattern[64];
+    char detected_service[128];
+    char detected_version[64];
+    int confidence_level; // 0-100
 } ScanResult;
 
 extern volatile int running;

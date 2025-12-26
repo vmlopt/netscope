@@ -6,10 +6,10 @@ INCDIR = include
 OBJDIR = obj
 
 # Source files
-SRCS = $(SRCDIR)/main.c $(SRCDIR)/args.c $(SRCDIR)/banner.c $(SRCDIR)/output.c $(SRCDIR)/scanner.c $(SRCDIR)/signal.c $(SRCDIR)/utils.c
+SRCS = $(SRCDIR)/main.c $(SRCDIR)/args.c $(SRCDIR)/banner.c $(SRCDIR)/output.c $(SRCDIR)/scanner.c $(SRCDIR)/signal.c $(SRCDIR)/utils.c $(SRCDIR)/service_detect.c
 
 # Object files
-OBJS = $(OBJDIR)/main.o $(OBJDIR)/args.o $(OBJDIR)/banner.o $(OBJDIR)/output.o $(OBJDIR)/scanner.o $(OBJDIR)/signal.o $(OBJDIR)/utils.o
+OBJS = $(OBJDIR)/main.o $(OBJDIR)/args.o $(OBJDIR)/banner.o $(OBJDIR)/output.o $(OBJDIR)/scanner.o $(OBJDIR)/signal.o $(OBJDIR)/utils.o $(OBJDIR)/service_detect.o
 
 # Include directories
 INCLUDES = -I$(INCDIR)
