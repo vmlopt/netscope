@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "scanner.h"
 #include "syn_scan.h"
+#include "iot_scan.h"
 #include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
     switch (scan_type) {
         case SCAN_CONNECT: printf("TCP Connect\n"); break;
         case SCAN_SYN: printf("TCP SYN (-sS)\n"); break;
+        case SCAN_IOT: printf("IoT Device Scan (-iot)\n"); break;
     }
     printf("Press Ctrl+C to stop\n\n");
 
@@ -69,7 +71,8 @@ int main(int argc, char *argv[]) {
         thread_data[i].output_file = output_file;
         thread_data[i].file_mutex = &file_mutex;
 
-        void *(*scan_function)(void *) = (scan_type == SCAN_SYN) ? syn_scanner_thread : scanner_thread;
+        void *(*scan_function)(void *) = (scan_type == SCAN_SYN) ? syn_scanner_thread :
+                                         (scan_type == SCAN_IOT) ? iot_scanner_thread : scanner_thread;
 
         if (pthread_create(&threads[i], NULL, scan_function, &thread_data[i]) != 0) {
             perror("pthread_create");

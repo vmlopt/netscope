@@ -11,9 +11,14 @@ NetScope is an advanced multi-threaded IP port scanner that scans random public 
   - Response behavior fingerprinting
   - Protocol-specific banner grabbing
   - Confidence scoring system
+- **IoT device discovery (-iot)**:
+  - Focused scanning of common IoT ports (23, 80, 443, 554, 1900, etc.)
+  - Device type identification (cameras, routers, DVRs, smart TVs, etc.)
+  - Vendor recognition (Hikvision, Dahua, TP-Link, Synology, etc.)
+  - Fire-and-forget SYN packet approach for efficiency
 - Service detection for 20+ protocols (HTTP, SSH, FTP, SMTP, MySQL, PostgreSQL, etc.)
-- Multiple output formats: TXT, JSON, CSV
-- Real-time results display with service identification
+- Multiple output formats: TXT, JSON, CSV with IoT device information
+- Real-time results display with device type identification
 - Graceful shutdown with Ctrl+C
 
 ## Prerequisites
@@ -50,13 +55,14 @@ This starts scanning with default settings:
 ### Command Line Options
 
 ```bash
-./netscope [threads] [--ports port1,port2,...] [--out format] [-ss|--syn]
+./netscope [threads] [--ports port1,port2,...] [--out format] [-ss|--syn] [-iot]
 ```
 
 - `threads`: Number of scanning threads (1-500, default: 100)
 - `--ports port1,port2,...`: Comma-separated list of ports to scan (default: 80)
 - `--out format`: Output format (txt, json, csv)
 - `-ss` or `--syn`: Use TCP SYN scanning (half-open scanning) for stealthier and more accurate port detection
+- `-iot`: IoT device scanning mode - focuses on common IoT ports and identifies device types
 
 ### Examples
 
@@ -90,6 +96,11 @@ Use TCP SYN scanning for stealthier detection:
 ./netscope -ss --ports 22,80,443
 ```
 
+IoT device discovery:
+```bash
+./netscope -iot --out json
+```
+
 ## Output
 
 ### Console Output
@@ -112,10 +123,10 @@ Results are saved to two locations:
 
 #### TXT Format (scan_results.txt)
 ```
-IP Address	Port	Status	Latency (ms)	Banner	TCP Window	Response Time (ms)	Response Pattern	Detected Service	Version	Confidence
-192.168.1.1	80	open	25	Apache/2.4.41	64240	18	Apache	Apache	2.4.x	95
-10.0.0.1	22	open	15	SSH-2.0-OpenSSH_8.2p1	64240	12	SSH-2.0-OpenSSH	OpenSSH	8.x	98
-172.16.0.1	3306	open	8			64240	5		Unknown		0
+IP Address	Port	Status	Latency (ms)	Banner	TCP Window	Response Time (ms)	Response Pattern	Detected Service	Version	Confidence	IoT Vendor	IoT Device Model
+192.168.1.1	80	open	25	Apache/2.4.41	64240	18	Apache	Apache	2.4.x	95	Router	Network Router
+10.0.0.1	22	open	15	SSH-2.0-OpenSSH_8.2p1	64240	12	SSH-2.0-OpenSSH	OpenSSH	8.x	98	Unknown	IoT Device
+172.16.0.1	554	open	12	RTSP/1.0 200 OK	16384	8	RTSP	Unknown		0	IP Camera	Network Camera
 ```
 
 #### JSON Format (scan_results.json)
@@ -132,17 +143,19 @@ IP Address	Port	Status	Latency (ms)	Banner	TCP Window	Response Time (ms)	Respons
     "response_pattern": "Apache",
     "detected_service": "Apache",
     "detected_version": "2.4.x",
-    "confidence_level": 95
+    "confidence_level": 95,
+    "iot_vendor": "Router",
+    "iot_device_model": "Network Router"
   }
 ]
 ```
 
 #### CSV Format (scan_results.csv)
 ```csv
-ip,port,status,latency_ms,banner,tcp_window_size,response_time_ms,response_pattern,detected_service,detected_version,confidence_level
-192.168.1.1,80,open,25,"Apache/2.4.41",64240,18,"Apache","Apache","2.4.x",95
-10.0.0.1,22,open,15,"SSH-2.0-OpenSSH_8.2p1",64240,12,"SSH-2.0-OpenSSH","OpenSSH","8.x",98
-172.16.0.1,3306,open,8,"",64240,5,"","Unknown","",0
+ip,port,status,latency_ms,banner,tcp_window_size,response_time_ms,response_pattern,detected_service,detected_version,confidence_level,iot_vendor,iot_device_model
+192.168.1.1,80,open,25,"Apache/2.4.41",64240,18,"Apache","Apache","2.4.x",95,"Router","Network Router"
+10.0.0.1,22,open,15,"SSH-2.0-OpenSSH_8.2p1",64240,12,"SSH-2.0-OpenSSH","OpenSSH","8.x",98,"Unknown","IoT Device"
+172.16.0.1,554,open,12,"RTSP/1.0 200 OK",16384,8,"RTSP","Unknown","",0,"IP Camera","Network Camera"
 ```
 
 ## Stopping the Scanner
@@ -191,14 +204,16 @@ Found: 172.16.0.1:3306 (8ms) [MySQL 8.x 90%]
 - Maximum 10,000 scan results
 - 100ms connection timeout
 - Automatic exclusion of private IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 0.0.0.0)
-- **Two scanning methods**:
+- **Three scanning methods**:
   - **TCP Connect Scan** (default): Full TCP connection for reliable banner grabbing
   - **TCP SYN Scan** (-sS): Half-open scanning using raw sockets for stealthier detection
+  - **IoT Device Scan** (-iot): Optimized scanning for Internet of Things devices
 - **Service version detection for 20+ protocols**:
   - TCP handshake analysis (window size, response timing)
   - Protocol-specific banner grabbing (HTTP, SSH, FTP, SMTP, POP3, IMAP, MySQL, PostgreSQL, DNS)
   - Fingerprint matching with confidence scoring
 - Supported services: Apache, nginx, OpenSSH, vsftpd, MySQL, PostgreSQL, Microsoft-IIS, and more
+- **IoT Device Types**: IP Cameras (Hikvision, Dahua, Foscam), DVR/NVR systems, Routers (TP-Link, D-Link), Smart TVs (Samsung, LG), Smart bulbs (Philips Hue), Thermostats (Nest), Network printers (HP), NAS devices (Synology, QNAP), and more
 
 ## TCP SYN Scanning (-sS)
 
@@ -242,6 +257,70 @@ Run with sudo for SYN scanning:
 sudo ./netscope -ss --ports 22,80,443
 ```
 
+## IoT Device Scanning (-iot)
+
+NetScope includes specialized IoT device discovery that focuses on identifying Internet of Things devices in your network. This mode uses optimized scanning techniques specifically designed for IoT devices.
+
+### Features
+
+- **IoT-Specific Port Scanning**: Focuses on ports commonly used by IoT devices (23, 80, 443, 554, 1900, 2323, 37777, etc.)
+- **Device Type Identification**: Recognizes cameras, routers, DVRs, smart TVs, thermostats, printers, NAS devices, and more
+- **Vendor Recognition**: Identifies manufacturers like Hikvision, Dahua, TP-Link, Synology, Samsung, etc.
+- **Fire-and-Forget SYN Packets**: Sends SYN packets without waiting for responses for maximum efficiency
+- **Smart Banner Analysis**: Analyzes device responses to determine device types and capabilities
+
+### Supported IoT Device Types
+
+- **IP Cameras**: Hikvision, Dahua, Foscam network cameras
+- **Video Recorders**: DVR and NVR systems from various manufacturers
+- **Routers**: TP-Link, D-Link, and other network routers
+- **Smart TVs**: Samsung, LG smart televisions
+- **Smart Home**: Philips Hue lights, Nest thermostats
+- **Network Storage**: Synology, QNAP NAS devices
+- **Printers**: HP network printers
+- **Other Devices**: Smart doorbells, IP phones, embedded web servers
+
+### Usage Examples
+
+```bash
+# Basic IoT device discovery
+./netscope -iot
+
+# IoT scanning with JSON output for analysis
+./netscope -iot --out json
+
+# IoT scanning with service detection
+./netscope -iot --out csv
+```
+
+### How it Works
+
+1. **Port Selection**: Scans only ports commonly used by IoT devices
+2. **SYN Packet Flood**: Sends SYN packets to all target ports simultaneously
+3. **Connection Attempts**: Tries to connect to responsive ports
+4. **Banner Analysis**: Extracts and analyzes device banners
+5. **Device Classification**: Matches banners against known IoT device fingerprints
+6. **Result Reporting**: Reports device types, vendors, and capabilities
+
+### Example Output
+
+```
+IoT Found: 192.168.1.100:80 (45ms) [IP Camera - Network Camera] [Apache 2.4.x 85%]
+IoT Found: 10.0.0.50:554 (23ms) [IP Camera - Network Camera]
+IoT Found: 172.16.0.25:80 (67ms) [Router - Network Router] [nginx 1.x 92%]
+IoT Found: 192.168.1.200:37777 (12ms) [DVR - Digital Video Recorder]
+```
+
+### Requirements
+
+- **Root privileges**: Required for raw socket operations (same as SYN scanning)
+- **Fast Network**: IoT scanning can generate significant network traffic
+
+Run IoT scanning with sudo:
+```bash
+sudo ./netscope -iot --out json
+```
+
 ## Build Targets
 
 - `make`: Build the application
@@ -258,6 +337,7 @@ netscope/
 │   ├── args.c         # Command line argument parsing
 │   ├── scanner.c      # Connect scanning implementation
 │   ├── syn_scan.c     # TCP SYN scanning implementation (-sS)
+│   ├── iot_scan.c     # IoT device scanning implementation (-iot)
 │   ├── banner.c       # Enhanced service banner detection
 │   ├── output.c       # Result export functions
 │   ├── signal.c       # Signal handling
@@ -268,6 +348,7 @@ netscope/
 │   ├── args.h         # Argument parsing
 │   ├── scanner.h      # Connect scanner interface
 │   ├── syn_scan.h     # SYN scanner interface
+│   ├── iot_scan.h     # IoT scanner interface
 │   ├── banner.h       # Banner detection
 │   ├── output.h       # Output interface
 │   ├── signal.h       # Signal handling

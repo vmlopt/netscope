@@ -32,8 +32,25 @@ typedef enum {
 
 typedef enum {
     SCAN_CONNECT,  // Full TCP connection (default)
-    SCAN_SYN       // TCP SYN scanning (-sS)
+    SCAN_SYN,      // TCP SYN scanning (-sS)
+    SCAN_IOT       // IoT device scanning (-iot)
 } ScanType;
+
+typedef enum {
+    IOT_UNKNOWN,
+    IOT_CAMERA,
+    IOT_ROUTER,
+    IOT_DVR,
+    IOT_NVR,
+    IOT_SMART_TV,
+    IOT_SMART_BULB,
+    IOT_THERMOSTAT,
+    IOT_DOORBELL,
+    IOT_PRINTER,
+    IOT_NAS,
+    IOT_IP_PHONE,
+    IOT_WEB_SERVER
+} IoTDeviceType;
 
 typedef struct {
     int thread_id;
@@ -56,6 +73,10 @@ typedef struct {
     char detected_service[128];
     char detected_version[64];
     int confidence_level; // 0-100
+    // IoT device data
+    IoTDeviceType iot_device_type;
+    char iot_device_model[64];
+    char iot_vendor[32];
 } ScanResult;
 
 extern volatile int running;

@@ -1,6 +1,7 @@
 #include "syn_scan.h"
 #include "banner.h"
 #include "service_detect.h"
+#include "scanner.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -133,6 +134,16 @@ void *syn_scanner_thread(void *arg) {
     // Create raw socket for this thread
     raw_sock = create_raw_socket();
     if (raw_sock < 0) {
+        // If raw socket fails (no root privileges), show warning only once globally
+        static int warned = 0;
+        if (__sync_bool_compare_and_swap(&warned, 0, 1)) {
+            fprintf(stderr, "\n[!] SYN scanning requires root privileges for raw sockets.\n");
+            fprintf(stderr, "[!] Try: sudo ./netscope -ss\n");
+            fprintf(stderr, "[!] Falling back to connect scan mode...\n\n");
+        }
+
+        // Fall back to regular connect scanning
+        scanner_thread(arg);
         return NULL;
     }
 

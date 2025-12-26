@@ -48,6 +48,8 @@ void parse_arguments(int argc, char *argv[], int *num_threads) {
             i++; // Skip the next argument
         } else if (strcmp(argv[i], "-ss") == 0 || strcmp(argv[i], "--syn") == 0) {
             scan_type = SCAN_SYN;
+        } else if (strcmp(argv[i], "-iot") == 0) {
+            scan_type = SCAN_IOT;
         } else if (atoi(argv[i]) > 0) {
             // First number is threads
             *num_threads = atoi(argv[i]);
