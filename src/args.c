@@ -5,6 +5,7 @@
 
 void parse_arguments(int argc, char *argv[], int *num_threads) {
     *num_threads = 100;
+    scan_type = SCAN_CONNECT;  // Default to connect scan
     // Initialize default port
     ports[0] = DEFAULT_PORT;
     port_count = 1;
@@ -45,6 +46,8 @@ void parse_arguments(int argc, char *argv[], int *num_threads) {
                 output_format = OUTPUT_TXT;
             }
             i++; // Skip the next argument
+        } else if (strcmp(argv[i], "-ss") == 0 || strcmp(argv[i], "--syn") == 0) {
+            scan_type = SCAN_SYN;
         } else if (atoi(argv[i]) > 0) {
             // First number is threads
             *num_threads = atoi(argv[i]);

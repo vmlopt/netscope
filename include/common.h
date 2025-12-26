@@ -30,6 +30,11 @@ typedef enum {
     OUTPUT_CSV
 } OutputFormat;
 
+typedef enum {
+    SCAN_CONNECT,  // Full TCP connection (default)
+    SCAN_SYN       // TCP SYN scanning (-sS)
+} ScanType;
+
 typedef struct {
     int thread_id;
     int *ports;
@@ -41,7 +46,7 @@ typedef struct {
 typedef struct {
     char ip[16];
     int port;
-    char status[8];
+    char status[16];
     long latency_ms;
     char banner[256];
     // Service detection data
@@ -57,6 +62,7 @@ extern volatile int running;
 extern ScanResult results[MAX_RESULTS];
 extern int result_count;
 extern OutputFormat output_format;
+extern ScanType scan_type;
 extern int ports[MAX_PORTS];
 extern int port_count;
 extern pthread_mutex_t results_mutex;

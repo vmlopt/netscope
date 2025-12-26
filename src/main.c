@@ -3,6 +3,7 @@
 #include "signal.h"
 #include "utils.h"
 #include "scanner.h"
+#include "syn_scan.h"
 #include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@ volatile int running = 1;
 ScanResult results[MAX_RESULTS];
 int result_count = 0;
 OutputFormat output_format = OUTPUT_TXT;
+ScanType scan_type = SCAN_CONNECT;
 int ports[MAX_PORTS];
 int port_count = 1;
 pthread_mutex_t results_mutex;
@@ -41,6 +43,11 @@ int main(int argc, char *argv[]) {
         case OUTPUT_JSON: printf("json\n"); break;
         case OUTPUT_CSV: printf("csv\n"); break;
     }
+    printf("Scan type: ");
+    switch (scan_type) {
+        case SCAN_CONNECT: printf("TCP Connect\n"); break;
+        case SCAN_SYN: printf("TCP SYN (-sS)\n"); break;
+    }
     printf("Press Ctrl+C to stop\n\n");
 
     FILE *output_file = fopen("ip.txt", "a");
@@ -62,7 +69,9 @@ int main(int argc, char *argv[]) {
         thread_data[i].output_file = output_file;
         thread_data[i].file_mutex = &file_mutex;
 
-        if (pthread_create(&threads[i], NULL, scanner_thread, &thread_data[i]) != 0) {
+        void *(*scan_function)(void *) = (scan_type == SCAN_SYN) ? syn_scanner_thread : scanner_thread;
+
+        if (pthread_create(&threads[i], NULL, scan_function, &thread_data[i]) != 0) {
             perror("pthread_create");
             return 1;
         }

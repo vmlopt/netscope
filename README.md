@@ -50,12 +50,13 @@ This starts scanning with default settings:
 ### Command Line Options
 
 ```bash
-./netscope [threads] [--ports port1,port2,...] [--out format]
+./netscope [threads] [--ports port1,port2,...] [--out format] [-ss|--syn]
 ```
 
 - `threads`: Number of scanning threads (1-500, default: 100)
 - `--ports port1,port2,...`: Comma-separated list of ports to scan (default: 80)
 - `--out format`: Output format (txt, json, csv)
+- `-ss` or `--syn`: Use TCP SYN scanning (half-open scanning) for stealthier and more accurate port detection
 
 ### Examples
 
@@ -82,6 +83,11 @@ Scan port 22 with 200 threads and CSV output:
 Comprehensive service scan (web, database, SSH):
 ```bash
 ./netscope 150 --ports 22,80,443,3306,5432 --out json
+```
+
+Use TCP SYN scanning for stealthier detection:
+```bash
+./netscope -ss --ports 22,80,443
 ```
 
 ## Output
@@ -185,11 +191,56 @@ Found: 172.16.0.1:3306 (8ms) [MySQL 8.x 90%]
 - Maximum 10,000 scan results
 - 100ms connection timeout
 - Automatic exclusion of private IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 0.0.0.0)
+- **Two scanning methods**:
+  - **TCP Connect Scan** (default): Full TCP connection for reliable banner grabbing
+  - **TCP SYN Scan** (-sS): Half-open scanning using raw sockets for stealthier detection
 - **Service version detection for 20+ protocols**:
   - TCP handshake analysis (window size, response timing)
   - Protocol-specific banner grabbing (HTTP, SSH, FTP, SMTP, POP3, IMAP, MySQL, PostgreSQL, DNS)
   - Fingerprint matching with confidence scoring
 - Supported services: Apache, nginx, OpenSSH, vsftpd, MySQL, PostgreSQL, Microsoft-IIS, and more
+
+## TCP SYN Scanning (-sS)
+
+TCP SYN scanning provides stealthier port detection by using raw sockets to send SYN packets without completing the full TCP handshake. This method is more accurate for determining port states and less likely to be logged by target systems.
+
+### Features
+
+- **Half-open scanning**: Sends SYN packets and analyzes responses without completing connections
+- **Accurate port state detection**:
+  - **open**: SYN-ACK response received
+  - **closed**: RST response received
+  - **filtered**: No response or ICMP unreachable
+- **Stealth mode**: Less detectable than full connection scans
+- **Raw socket implementation**: Direct packet crafting and analysis
+
+### Usage
+
+```bash
+# Use SYN scanning instead of connect scanning
+./netscope -ss --ports 22,80,443
+
+# Combine with service detection
+./netscope -ss --ports 21,22,80,443,3306 --out json
+```
+
+### How it works
+
+1. **Packet Crafting**: Creates TCP SYN packets with proper IP and TCP headers
+2. **Checksum Calculation**: Computes correct TCP and IP checksums
+3. **Response Analysis**: Monitors for SYN-ACK (open), RST (closed), or no response (filtered)
+4. **Banner Grabbing**: For open ports, follows up with regular connection to grab banners
+5. **Service Detection**: Applies fingerprinting analysis to identify services
+
+### Requirements
+
+- **Root privileges**: Required for raw socket operations
+- **Linux/Unix**: Raw socket support needed
+
+Run with sudo for SYN scanning:
+```bash
+sudo ./netscope -ss --ports 22,80,443
+```
 
 ## Build Targets
 
@@ -205,7 +256,8 @@ netscope/
 ├── src/           # Source files
 │   ├── main.c         # Main application logic
 │   ├── args.c         # Command line argument parsing
-│   ├── scanner.c      # Scanning thread implementation
+│   ├── scanner.c      # Connect scanning implementation
+│   ├── syn_scan.c     # TCP SYN scanning implementation (-sS)
 │   ├── banner.c       # Enhanced service banner detection
 │   ├── output.c       # Result export functions
 │   ├── signal.c       # Signal handling
@@ -214,7 +266,8 @@ netscope/
 ├── include/       # Header files
 │   ├── common.h       # Common definitions and structures
 │   ├── args.h         # Argument parsing
-│   ├── scanner.h      # Scanner interface
+│   ├── scanner.h      # Connect scanner interface
+│   ├── syn_scan.h     # SYN scanner interface
 │   ├── banner.h       # Banner detection
 │   ├── output.h       # Output interface
 │   ├── signal.h       # Signal handling
